@@ -9,11 +9,12 @@ class Solution:
              
 
         def search(row, col, index):
-            if index == len(word):
-                return True
             
             if board[row][col] != word[index]:
                 return False
+            
+            if index == len(word) - 1:
+                return True
             
             visited.add((row, col))
 
