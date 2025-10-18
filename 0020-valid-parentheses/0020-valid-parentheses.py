@@ -1,15 +1,16 @@
 class Solution:
     def isValid(self, s: str) -> bool:
         stack = []
-        for char in s:
+
+        for ch in s:
             if not stack:
-                stack.append(char)
-            elif (stack[-1] == '(' and char == ')') or (stack[-1] == '{' and char == '}') or (stack[-1] == '[' and char == ']'):
+                stack.append(ch)
+            elif (ch == ")" and stack[-1] == "(") or (ch == "}" and stack[-1] == "{") or (ch == "]" and stack[-1] == "["):
                 stack.pop()
             else:
-                stack.append(char)
+                stack.append(ch)
         
         if stack:
             return False
-        return True
         
+        return True
