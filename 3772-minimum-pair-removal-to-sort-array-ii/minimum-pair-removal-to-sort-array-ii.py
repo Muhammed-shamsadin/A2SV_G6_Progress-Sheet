@@ -1,63 +1,85 @@
+class Node:
+    def __init__(self, value, left):
+        self.value = value
+        self.left = left
+        self.prev = None
+        self.next = None
+
+
 class Solution:
     def minimumPairRemoval(self, nums: List[int]) -> int:
-        n = len(nums)
-        if n <= 1:
-            return 0
+        class PQItem:
+            def __init__(self, first, second, cost):
+                self.first = first
+                self.second = second
+                self.cost = cost
 
-        arr = [int(x) for x in nums]
-        removed = [False] * n
-        heap = []
-        asc = 0
-        for i in range(1, n):
-            heapq.heappush(heap, (arr[i - 1] + arr[i], i - 1))
-            if arr[i] >= arr[i - 1]:
-                asc += 1
-        if asc == n - 1:
-            return 0
+            def __lt__(self, other):
+                if self.cost == other.cost:
+                    return self.first.left < other.first.left
+                return self.cost < other.cost
 
-        rem = n
-        prev = [i - 1 for i in range(n)]
-        nxt = [i + 1 for i in range(n)]
+        pq = []
+        head = Node(nums[0], 0)
+        current = head
+        merged = [False] * len(nums)
+        decrease_count = 0
+        count = 0
 
-        while rem > 1:
-            if not heap:
-                break
-            sumv, left = heapq.heappop(heap)
-            right = nxt[left]
-            if right >= n or removed[left] or removed[right] or arr[left] + arr[right] != sumv:
+        for i in range(1, len(nums)):
+            new_node = Node(nums[i], i)
+            current.next = new_node
+            new_node.prev = current
+            heapq.heappush(
+                pq, PQItem(current, new_node, current.value + new_node.value)
+            )
+
+            if nums[i - 1] > nums[i]:
+                decrease_count += 1
+
+            current = new_node
+
+        while decrease_count > 0:
+            item = heapq.heappop(pq)
+            first, second, cost = item.first, item.second, item.cost
+
+            if (
+                merged[first.left]
+                or merged[second.left]
+                or first.value + second.value != cost
+            ):
                 continue
+            count += 1
 
-            pre = prev[left]
-            after = nxt[right]
+            if first.value > second.value:
+                decrease_count -= 1
 
-            if arr[left] <= arr[right]:
-                asc -= 1
-            if pre != -1 and arr[pre] <= arr[left]:
-                asc -= 1
-            if after != n and arr[right] <= arr[after]:
-                asc -= 1
+            prev_node = first.prev
+            next_node = second.next
+            first.next = next_node
+            if next_node:
+                next_node.prev = first
 
-            arr[left] += arr[right]
-            removed[right] = True
-            rem -= 1
+            if prev_node:
+                if prev_node.value > first.value and prev_node.value <= cost:
+                    decrease_count -= 1
+                elif prev_node.value <= first.value and prev_node.value > cost:
+                    decrease_count += 1
 
-            if pre != -1:
-                heapq.heappush(heap, (arr[pre] + arr[left], pre))
-                if arr[pre] <= arr[left]:
-                    asc += 1
-            else:
-                prev[left] = -1
+                heapq.heappush(
+                    pq, PQItem(prev_node, first, prev_node.value + cost)
+                )
 
-            if after != n:
-                prev[after] = left
-                nxt[left] = after
-                heapq.heappush(heap, (arr[left] + arr[after], left))
-                if arr[left] <= arr[after]:
-                    asc += 1
-            else:
-                nxt[left] = n
+            if next_node:
+                if second.value > next_node.value and cost <= next_node.value:
+                    decrease_count -= 1
+                elif second.value <= next_node.value and cost > next_node.value:
+                    decrease_count += 1
+                heapq.heappush(
+                    pq, PQItem(first, next_node, cost + next_node.value)
+                )
 
-            if asc == rem - 1:
-                return n - rem
+            first.value = cost
+            merged[second.left] = True
 
-        return n
+        return count
